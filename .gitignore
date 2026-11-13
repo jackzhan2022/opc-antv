@@ -1,0 +1,26 @@
+# Local configuration, credentials, and generated files.
+**/.local/
+**/.env
+**/.env.*
+!**/.env.example
+**/backend/config/application-local.yml
+**/*credentials*.json
+*.pem
+*.key
+*.p12
+*.pfx
+**/node_modules/
+**/target/
+**/dist/
+**/.umi*/
+**/__pycache__/
+*.pyc
+*.log
+**/test-results/
+**/playwright-report/
+**/frontend/artifacts/
+# Local UI captures can contain enterprise account information.
+sinx-platform/docs/screenshots/
+preview/*.png
+Thumbs.db
+.DS_Store

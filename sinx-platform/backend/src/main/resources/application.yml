@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: sinx-platform
+  config:
+    import: optional:file:./config/application-local.yml
+  datasource:
+    url: ${SINX_DB_URL:jdbc:mysql://127.0.0.1:3307/sinx_platform?useUnicode=true&characterEncoding=UTF-8&connectionTimeZone=UTC}
+    username: ${SINX_DB_USERNAME:sinx}
+    password: ${SINX_DB_PASSWORD:}
+server:
+  port: ${SINX_PORT:8080}
+  forward-headers-strategy: none
+  servlet:
+    session:
+      timeout: 8h
+      tracking-modes: cookie
+      cookie:
+        name: SINX_SESSION
+        http-only: true
+        same-site: lax
+        secure: ${SINX_COOKIE_SECURE:false}
+sinx:
+  sso:
+    enabled: ${CREATOR_SSO_ENABLED:false}
+    client-id: ${CREATOR_SSO_CLIENT_ID:creator-platform}
+    client-secret: ${CREATOR_SSO_CLIENT_SECRET:}
+    redirect-uri: ${CREATOR_SSO_REDIRECT_URI:http://localhost:8002/creator-api/login/oauth2/code/sinx}
+    application-url: ${CREATOR_APPLICATION_URL:http://localhost:8002/creators/}
+  public-base-url: ${SINX_PUBLIC_BASE_URL:http://localhost:8000}
+  auth:
+    feishu:
+      enabled: ${FEISHU_ENABLED:false}
+      client-id: ${FEISHU_APP_ID:}
+      client-secret: ${FEISHU_APP_SECRET:}
+      tenant-id: ${FEISHU_TENANT_KEY:}
+      admin-subjects: ${FEISHU_ADMIN_SUBJECTS:}
+    wecom:
+      enabled: ${WECOM_ENABLED:false}
+      client-id: ${WECOM_CORP_ID:}
+      client-secret: ${WECOM_APP_SECRET:}
+      tenant-id: ${WECOM_CORP_ID:}
+      agent-id: ${WECOM_AGENT_ID:}
+      admin-subjects: ${WECOM_ADMIN_SUBJECTS:}
+logging:
+  level:
+    org.springframework.web.client: WARN
+    org.springframework.http.client: WARN

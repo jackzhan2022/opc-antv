@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: creator-platform
+  config:
+    import: optional:file:./config/application-local.yml
+  datasource:
+    url: ${CREATOR_DB_URL:jdbc:mysql://127.0.0.1:3307/creator_platform?useUnicode=true&characterEncoding=UTF-8&connectionTimeZone=UTC}
+    username: ${CREATOR_DB_USERNAME:creator}
+    password: ${CREATOR_DB_PASSWORD:}
+server:
+  port: ${CREATOR_PORT:8081}
+  servlet:
+    context-path: /creator-api
+    session:
+      timeout: 8h
+      tracking-modes: cookie
+      cookie:
+        name: CREATOR_SESSION
+        http-only: true
+        same-site: lax
+        path: /creator-api
+        secure: ${CREATOR_COOKIE_SECURE:false}
+creator:
+  platform-base-url: ${SINX_BASE_URL:http://localhost:8000}
+  platform-backend-url: ${SINX_BACKEND_URL:http://localhost:8080}
+  public-base-url: ${CREATOR_PUBLIC_BASE_URL:http://localhost:8002}
+  client-id: ${CREATOR_SSO_CLIENT_ID:creator-platform}
+  client-secret: ${CREATOR_SSO_CLIENT_SECRET:}
+logging:
+  level:
+    org.springframework.web.client: WARN
+    org.springframework.http.client: WARN
+    org.springframework.security.oauth2: WARN

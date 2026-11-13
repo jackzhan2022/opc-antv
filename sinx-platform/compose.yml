@@ -1,0 +1,20 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: sinx_platform
+      MYSQL_USER: sinx
+      MYSQL_PASSWORD: ${SINX_DB_PASSWORD:?set SINX_DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${SINX_MYSQL_ROOT_PASSWORD:?set SINX_MYSQL_ROOT_PASSWORD in .env}
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_bin']
+    ports:
+      - '127.0.0.1:3307:3306'
+    volumes:
+      - sinx-mysql:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+volumes:
+  sinx-mysql:

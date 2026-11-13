@@ -1,0 +1,2 @@
+# Published migrations are immutable; preserve their original bytes across operating systems.
+**/src/main/resources/db/migration/*.sql -text

@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:sinx;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+  flyway:
+    enabled: true
+sinx:
+  public-base-url: http://localhost:8000
+  auth:
+    feishu:
+      enabled: false
+      client-id: ''
+      client-secret: ''
+      tenant-id: ''
+    wecom:
+      enabled: false
+      client-id: ''
+      client-secret: ''
+      tenant-id: ''
+      agent-id: ''
