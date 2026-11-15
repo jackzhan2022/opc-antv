@@ -4,7 +4,7 @@ import { Link, history } from 'umi';
 import { Brand } from './Brand';
 import { ApiError, logout, type Member } from '@/services/api';
 
-export function PlatformHeader({member,active,onError}:{member:Member|null;active:'workspace'|'members';onError:(message:string)=>void}) {
+export function PlatformHeader({member,active,onError}:{member:Member|null;active:'workspace'|'members'|'applications';onError:(message:string)=>void}) {
  const [leaving,setLeaving]=useState(false);
  async function leave() {
   setLeaving(true);
@@ -14,14 +14,15 @@ export function PlatformHeader({member,active,onError}:{member:Member|null;activ
    else onError('退出失败，请重试');
   } finally {setLeaving(false);}
  }
- return <header className="platform-header"><Brand/>
+ return <header className="platform-header"><div className="platform-header-inner"><Brand/>
   <nav aria-label="主导航">
    <Link to="/workspace" aria-current={active==='workspace'?'page':undefined}>工作台</Link>
    {member?.role==='ADMIN' && <Link to="/members" aria-current={active==='members'?'page':undefined}>成员管理</Link>}
+   {member?.role==='ADMIN' && <Link to="/applications" aria-current={active==='applications'?'page':undefined}>应用管理</Link>}
   </nav>
   <div className="account">{member && <>
    <Avatar className="member-avatar">{member.displayName.slice(0,1)}</Avatar><span className="member-name">{member.displayName}</span>
    <Button type="text" onClick={leave} loading={leaving}>退出登录</Button>
   </>}</div>
- </header>;
+ </div></header>;
 }

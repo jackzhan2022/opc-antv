@@ -19,7 +19,7 @@ final class CreatorSessionFilter extends OncePerRequestFilter {
     CreatorSessionFilter(PlatformClient platform, OAuth2AuthorizedClientRepository clients) { this.platform = platform; this.clients = clients; }
     @Override protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI().substring(request.getContextPath().length());
-        return path.equals("/health") || path.equals("/auth/csrf") || path.equals("/auth/logout")
+        return (path.equals("/contracts/callback") && request.getMethod().equals("POST")) || path.equals("/health") || path.equals("/auth/csrf") || path.equals("/auth/logout")
                 || path.startsWith("/oauth2/") || path.startsWith("/login/oauth2/") || path.equals("/error");
     }
     @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {

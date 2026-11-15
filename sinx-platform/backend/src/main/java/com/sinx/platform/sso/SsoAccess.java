@@ -2,12 +2,14 @@ package com.sinx.platform.sso;
 import java.util.Map;
 import java.util.Optional;
 import com.sinx.platform.member.MemberRepository;
+import com.sinx.platform.application.ApplicationService;
 import org.springframework.security.oauth2.server.authorization.*;
 public class SsoAccess {
  private final OAuth2AuthorizationService authorizations;
  private final MemberRepository members;
  private final String clientId;
- public SsoAccess(OAuth2AuthorizationService authorizations,MemberRepository members,String clientId) {this.authorizations=authorizations;this.members=members;this.clientId=clientId;}
+ private final ApplicationService applications;
+ public SsoAccess(OAuth2AuthorizationService authorizations,MemberRepository members,String clientId,ApplicationService applications) {this.authorizations=authorizations;this.members=members;this.clientId=clientId;this.applications=applications;}
  public Optional<Map<String,Object>> inspect(String token) {
   if(token==null || token.isBlank() || token.length()>4096)return Optional.empty();
   var authorization=authorizations.findByToken(token,OAuth2TokenType.ACCESS_TOKEN);
@@ -17,6 +19,9 @@ public class SsoAccess {
   Object version=authorization.getAttribute(MemberAuthorizationService.MEMBER_VERSION);
   var member=members.find(authorization.getPrincipalName());
   if(member.isEmpty() || !member.get().enabled() || !Long.toString(member.get().sessionVersion()).equals(version))return Optional.empty();
+  var grant=applications.access(member.get().id(),ApplicationService.CREATOR_ID);
+  if(grant.isEmpty() || !Long.toString(grant.get().applicationVersion()).equals(authorization.getAttribute(MemberAuthorizationService.APPLICATION_VERSION))
+    || !Long.toString(grant.get().grantVersion()).equals(authorization.getAttribute(MemberAuthorizationService.GRANT_VERSION)))return Optional.empty();
   var found=member.get();
   return Optional.of(Map.of("active",true,"sub",found.id(),"displayName",found.displayName(),"role",found.role(),
    "scope","creator","client_id",clientId,"token_type","Bearer","exp",access.getToken().getExpiresAt().getEpochSecond()));

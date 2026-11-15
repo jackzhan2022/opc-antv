@@ -60,6 +60,7 @@ export default function Roles() {
               所有启用的内部成员均可维护公司共享档案。
             </p>
             <dl className="configuration-permissions">
+              <div><dt>合同管理</dt><dd>{admin ? "拟定、发起与撤销合同，管理合同模板，查看及归档签署文件" : "拟定合同草稿，查看合同、获取签署链接及归档签署文件；正式发起由管理员确认"}</dd></div>
               <div>
                 <dt>创作者档案</dt>
                 <dd>查看、搜索、新增、编辑、归档与恢复</dd>

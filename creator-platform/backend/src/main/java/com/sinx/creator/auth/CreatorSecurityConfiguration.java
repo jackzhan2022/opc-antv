@@ -74,7 +74,9 @@ public class CreatorSecurityConfiguration {
             RestClientAuthorizationCodeTokenResponseClient tokenExchange) throws Exception {
         var requests = new DefaultOAuth2AuthorizationRequestResolver(registrations,"/oauth2/authorization");
         requests.setAuthorizationRequestCustomizer(OAuth2AuthorizationRequestCustomizers.withPkce());
-        return http.authorizeHttpRequests(a -> a.requestMatchers("/health","/auth/csrf","/error").permitAll()
+        return http.csrf(c -> c.ignoringRequestMatchers("/contracts/callback"))
+                .authorizeHttpRequests(a -> a.requestMatchers("/health","/auth/csrf","/error").permitAll()
+                .requestMatchers(HttpMethod.POST,"/contracts/callback").permitAll()
                 .requestMatchers(HttpMethod.POST,"/dictionaries").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PATCH,"/dictionaries/**").hasRole("ADMIN")
                 .anyRequest().authenticated())

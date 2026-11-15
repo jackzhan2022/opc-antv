@@ -11,6 +11,8 @@ export default defineConfig({
     { path: "/occupations", component: "@/pages/Occupations" },
     { path: "/tags", component: "@/pages/Tags" },
     { path: "/roles", component: "@/pages/Roles" },
+    { path: "/contracts", component: "@/pages/Contracts" },
+    { path: "/contract-templates", component: "@/pages/ContractTemplates" },
     { path: "/:id", component: "@/pages/Detail" },
     { path: "*", component: "@/pages/NotFound" },
   ],

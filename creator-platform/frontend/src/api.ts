@@ -71,6 +71,23 @@ const errors: Record<string, string> = {
   maintainer_unavailable: "维护人已停用或不可用，请重新选择。",
   platform_unavailable: "统一平台暂时不可用，请稍后重试。",
   network_error: "网络连接失败，请重试。",
+  contract_invalid: "请检查合同资料。模板仅支持 5MB 以内的 Word（.doc/.docx）或 PDF 原文件。",
+  contract_file_too_large: "文件超过 5MB，请压缩后重新导入。",
+  contract_not_found: "合同或模板不存在。",
+  contract_conflict: "合同状态已变化，请刷新后重试。",
+  ess_not_configured: "腾讯电子签尚未配置完成，请联系管理员配置企业接入参数。",
+  ess_unavailable: "电子签接口未完成操作，请稍后同步状态；请勿重复新建合同。",
+  ess_creation_uncertain: "腾讯创建结果尚待核实，已暂停自动创建。请联系管理员核对电子签记录，避免重复发起。",
+  ess_document_uncertain: "文档创建结果尚待核实，将通过回调或状态查询恢复；请勿重复新建合同。",
+  template_conversion_failed: "Word 转换失败，请检查原文件后重新配置。",
+  template_not_available: "模板尚未发布、已停用或不是普通手动签署模板，请检查后重新关联。",
+  template_roles_invalid: "请将模板签署方依次配置为一位企业签署方和一位个人创作者。",
+  template_fields_unsupported: "模板包含暂未支持的发起方填写控件，请使用文本、日期、选择或勾选控件。",
+  template_changed: "腾讯模板已更新，请重新关联模板并生成新草稿。",
+  template_in_use: "模板已有关联合同，请导入一份新模板作为新版本，避免影响历史合同。",
+  ess_environment_changed: "合同所属电子签环境与当前配置不同，无法继续操作。",
+  contract_deadline_expired: "签署截止时间已过，请重新拟定合同。",
+  contract_preview_pending: "合同预览正在合成，请稍后重试。尚未发起签署。",
 };
 export class ApiError extends Error {
   constructor(
@@ -92,13 +109,13 @@ export async function api<T>(
         "/auth/csrf",
       );
       headers[csrf.headerName] = csrf.token;
-      headers["Content-Type"] = "application/json";
+      if (!(body instanceof FormData)) headers["Content-Type"] = "application/json";
     }
     const response = await fetch("/creator-api" + path, {
       method,
       credentials: "same-origin",
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body instanceof FormData ? body : body === undefined ? undefined : JSON.stringify(body),
     });
     if (!response.ok) {
       let code = "unknown";

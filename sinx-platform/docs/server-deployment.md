@@ -1,18 +1,20 @@
 # 统一平台服务器部署记录
 
-最新补充：创作者已单独更新到 `20261113-creator-structure`，其数据库为V3；本次统一平台产物、配置与进程均保持不变。统一平台仍为此前的 `20261113-creators` 后端版本。创作者部署备份、核验与真实身份验收边界见 `../../creator-platform/docs/verification.md`；下文保留各历史阶段记录。
+最新版本：统一平台已于2026-11-14发布 `20261114-app-access`，数据库为V4，包含品牌感门户、应用管理及按成员授权。创作者已发布 `20261114-creator-contracts`、独立数据库V4；其合同功能上线时未改统一平台产物、配置及PID，仅为创作者API增加6MB上传请求上限。下文保留各历史阶段记录。
 
-更新时间：2026-11-13。当前已提供企微内静默授权、普通浏览器扫码和手动成员管理，要求已关联平台成员才能登录。首版真实企微登录与退出已验收；最新版本的真实企微内免扫码登录尚待用户重新打开应用验收。不代表完整统一管理平台或全部生产安全待办已完成。
+更新时间：2026-11-14。飞书和企微渠道均已配置启用；平台登录要求已关联且启用的成员，业务应用还要求显式授权。当前发布的迁移、产物、健康及匿名鉴权检查通过；重启后的真人登录、应用管理及授权操作仍待本人验收。安全待办继续按下文记录处理。
 
 ## 已部署资源
+
+创作者合同版本 `20261114-creator-contracts` 已于2026-11-14部署，前后端目录分别为 `/var/www/creator-platform/releases/20261114-creator-contracts` 与 `/opt/creator-platform/releases/20261114-creator-contracts`。备份位于 `/var/backups/creator-platform-release-20261114-creator-contracts`，旧档案与字典摘要保留，合同四表初始均为空。Nginx仅在 `/creator-api/` 局部配置 `client_max_body_size 6m`；统一平台和其他路径限制不变。腾讯电子签保持未配置，详细验证见 `../../creator-platform/docs/verification.md`。创作者服务重启后需重新登录，本次未代用户做真实企业登录或签署验收。
 
 | 项目 | 当前配置 |
 | --- | --- |
 | 入口 | `https://x.aixmax.cn/`，登录页 `/login`，工作台 `/workspace` |
 | 服务器 | `43.138.147.3`，SSH 用户 `ubuntu` |
-| 发布标识 | `20261113-wecom-client`，保留此前 `20261113-members` 与 `20261113-initial` 产物 |
-| 前端 | `/var/www/sinx-platform/releases/20261113-wecom-client`，`current` 软链指向该版本 |
-| 后端 | `/opt/sinx-platform/releases/20261113-wecom-client/app.jar`，`current` 软链指向该版本 |
+| 发布标识 | `20261114-app-access`，保留此前各版本产物 |
+| 前端 | `/var/www/sinx-platform/releases/20261114-app-access`，`current` 软链指向该版本 |
+| 后端 | `/opt/sinx-platform/releases/20261114-app-access/app.jar`，`current` 软链指向该版本 |
 | 后端服务 | `sinx-platform.service`，已启用开机启动，独立系统账号 `sinx-platform` |
 | 后端监听 | `127.0.0.1:18088`，只通过 Nginx 同源 `/api/` 访问 |
 | 数据库 | 独立容器 `sinx-platform-mysql`，MySQL `8.0.46` |
@@ -24,7 +26,7 @@
 | 配置目录 | `/etc/sinx-platform`，权限 700 |
 | 部署清单 | `/etc/sinx-platform/deployment.json`，不包含密钥 |
 
-后端使用 `prod` profile、正式 HTTPS 入口和 Secure Cookie。数据库与后端分别限制资源，未复用其他业务数据库凭据。JVM 最大堆为 256 MB，服务总内存上限 640 MB；数据库容器内存上限 512 MB。部署后抽查后端约 204 MB、数据库约 171 MB，无服务重启。
+后端使用 `prod` profile、正式 HTTPS 入口和 Secure Cookie。数据库与后端分别限制资源，未复用其他业务数据库凭据。JVM 最大堆为 256 MB，服务总内存上限 640 MB；数据库容器内存上限 512 MB。首版部署时抽查后端约204 MB、数据库约171 MB；这不是当前版本的实时内存测量。
 
 部署文件来源：`deploy/sinx-platform.service` 与 `deploy/x.aixmax.cn.app.conf`。原 `deploy/x.aixmax.cn.conf` 保留为此前只有证书、业务返回 503 的配置。
 
@@ -96,6 +98,20 @@ V2 已改变登录准入策略并将旧自动登记身份移入待关联。不�
 - 首位管理员已按核实的本人企微身份一次性初始化；以后通过成员管理分配角色，初始化配置不会反复提权。
 - 当前单实例内存会话；重启服务需要重新登录，多实例需要共享 Session。
 - 按后续实际需求补齐定期备份和恢复演练、应用管理、创作者系统接入及跨系统 SSO；通讯录同步与自动匹配尚未实现。
+
+上述历史待办中的创作者接入、标准OAuth2单点登录、应用管理及按成员授权已补齐；定期备份与恢复演练、共享Session、全局单点退出、通讯录同步及自动匹配仍待后续建设。
+
+## 2026-11-14 应用管理与授权发布：20261114-app-access
+
+- 发布前核对正式平台V3、2名启用成员、4个已关联身份及0个待关联身份。飞书、企微和创作者SSO配置均已启用，配置为root所有、600。
+- 前后端已通过本地验证：H2和专用MySQL常规各67项、双后端HTTP专项1项、前端34项及类型检查/生产构建。发布只使用已验证的JAR与静态产物，不在生产库运行测试。
+- 更新器 `deploy/update-application-access.py` 先验证传输SHA-256、旧迁移原文及Flyway校验和。停止统一平台后，完整数据库和配置备份保存至 `/var/backups/sinx-platform-release-20261114-app-access`（目录700、SQL及配置600）；SQL为48,352字节，备份还包含原清单、旧产物链接、发布脚本及核验记录。
+- 使用同一prod配置在localhost:18090启动候选产物，验证V4校验和、旧成员/身份/待关联/成员审计/守卫数据摘要一致，2条创作者授权成功迁移；再停止候选服务，切换正式后端和前端软链。临时端口已关闭。
+- 平台JAR SHA-256为 `126f1a6542342848cdcbd5db2ef2ff3c36f387a9b3acabb0b68d99f757c22c0c`。公网login/workspace/members/applications四条SPA入口HTML及20个静态资源均与本次产物一致；两个健康接口UP，两服务active，平台和创作者仅监听localhost:18088/18089。
+- 成员及应用、新管理目录/授权/审计、创作者业务的匿名接口均401；无CSRF退出403，未认证内省401；飞书及企微授权跳转的固定回调、一次性state和Secure/HttpOnly/SameSite=Lax Cookie均正常。
+- 正式数据库当前V4，2名成员、4个身份及2条已授权创作者访问记录，新增1条迁移审计。平台配置字节未变；创作者配置、产物、PID及Nginx摘要前后相同。未写入生产测试成员或创作者资料；临时上传目录已清理。
+- 升级需要重新登录平台和创作者应用。尚未代用户进行真人登录后的授权/撤权操作，不把匿名检查或测试接口桩当作生产业务验收。
+- V4更新器仅适合此次V3升级，不直接用于后续版本。失败时保留数据库并恢复旧产物，同时关闭SSO，避免旧后端重新开放应用访问；不能仅切回旧JAR并保留SSO启用。正常发布未触发该回退。
 
 
 ## 2026-11-13 创作者首版发布：20261113-creators

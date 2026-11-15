@@ -1,0 +1,154 @@
+.workspace-page.workspace-portal {
+  --platform-content-width: 1040px;
+  --platform-page-gutter: 48px;
+  background: var(--pale);
+
+  .workspace-main {
+    max-width: var(--platform-content-width);
+    padding: 40px var(--platform-page-gutter, 48px) 64px;
+  }
+
+  .workspace-title {
+    margin-bottom: 30px;
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      line-height: 1.35;
+      letter-spacing: -.7px;
+    }
+
+    p {
+      margin-top: 9px;
+      line-height: 1.7;
+    }
+  }
+
+  .application-area {
+    border: 0;
+    padding: 0;
+    min-height: 0;
+  }
+
+  .app-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  .app-card {
+    min-width: 0;
+    padding: 28px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 3px 12px #20273504;
+    transition: border-color .18s, box-shadow .18s;
+
+    &:hover {
+      color: var(--ink);
+      border-color: #99b1e7;
+      box-shadow: 0 6px 24px #20273508;
+    }
+
+    &:focus-visible {
+      outline: 3px solid var(--blue);
+      outline-offset: 4px;
+      border-color: var(--blue);
+    }
+  }
+
+  .app-card-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .app-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #edf3ff;
+    color: var(--blue);
+
+    svg { width: 24px; height: 24px; }
+  }
+
+  .app-card-content {
+    min-width: 0;
+    overflow-wrap: anywhere;
+
+    h2 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 18px;
+      line-height: 1.5;
+      font-weight: 600;
+    }
+
+    p {
+      margin-top: 4px;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+  }
+
+  .app-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 34px;
+    line-height: 1.6;
+  }
+
+  .app-category { color: var(--muted); font-size: 12px; }
+
+  .app-enter {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--blue);
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+
+    svg { width: 18px; height: 18px; }
+  }
+
+  .workspace-empty, .workspace-loading {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .workspace-empty {
+    padding: 48px 24px;
+
+    .ant-empty { margin: 0; }
+    h2 { margin-top: 16px; color: var(--ink); font-size: 16px; font-weight: 500; }
+    p { margin-top: 8px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+  }
+
+  .workspace-loading { max-width: 462px; padding: 28px; }
+
+  @media (max-width: 820px) {
+    --platform-page-gutter: 28px;
+
+    .app-grid { grid-template-columns: minmax(0, 1fr); }
+    .app-card, .workspace-loading { max-width: 470px; }
+  }
+
+  @media (max-width: 680px) {
+    --platform-page-gutter: 20px;
+
+    .workspace-main { padding-top: 30px; padding-bottom: 48px; }
+    .workspace-title { margin-bottom: 26px; }
+    .workspace-title h1 { font-size: 26px; }
+    .app-card { padding: 24px 20px; }
+    .app-card-heading { gap: 12px; }
+    .app-icon { flex-basis: 42px; height: 42px; }
+    .app-card-content h2 { font-size: 17px; }
+    .workspace-loading { padding: 24px 20px; }
+  }
+}

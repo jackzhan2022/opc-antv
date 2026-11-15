@@ -18,17 +18,19 @@ final class CodeExchangeFilter extends OncePerRequestFilter {
     private final JdbcTemplate jdbc;
     private final TransactionTemplate transaction;
     private final RequestMatcher tokenEndpoint=PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST,"/api/sso/token");
+    private final RequestMatcher authorizeEndpoint=PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.GET,"/api/sso/authorize");
     CodeExchangeFilter(JdbcTemplate jdbc,PlatformTransactionManager manager) {
         this.jdbc=jdbc;this.transaction=new TransactionTemplate(manager);
     }
     @Override protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !tokenEndpoint.matches(request) || !"authorization_code".equals(request.getParameter("grant_type"));
+        return !authorizeEndpoint.matches(request) && (!tokenEndpoint.matches(request) || !"authorization_code".equals(request.getParameter("grant_type")));
     }
     @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain)
             throws IOException,ServletException {
         try {
             transaction.executeWithoutResult(status->{
-                // A database guard works across service instances; code exchanges are infrequent.
+                // Use the same lock order as administrator writes, covering code issuance and redemption.
+                jdbc.queryForObject("SELECT id FROM member_admin_guard WHERE id=1 FOR UPDATE",Integer.class);
                 jdbc.queryForObject("SELECT id FROM sso_exchange_guard WHERE id=1 FOR UPDATE",Integer.class);
                 try {chain.doFilter(request,response);}
                 catch(IOException|ServletException error) {throw new ExchangeFailure(error);}

@@ -90,7 +90,8 @@ class SsoHttpIntegrationTest {
     @BeforeEach void prepareMember() {
         jdbc.update("DELETE FROM oauth2_authorization");jdbc.update("DELETE FROM external_identity");
         jdbc.update("DELETE FROM pending_identity");jdbc.update("DELETE FROM member_audit");jdbc.update("DELETE FROM platform_member");
-        jdbc.update("INSERT INTO platform_member(id,display_name,platform_role) VALUES ('http-member','HTTP测试成员','MEMBER')");
+        jdbc.update("INSERT INTO platform_member(id,display_name,platform_role) VALUES ('http-member','HTTP测试成员','ADMIN')");
+        jdbc.update("INSERT INTO member_application_access(application_id,member_id,granted) VALUES ('creator-platform','http-member',true)");
         jdbc.update("INSERT INTO external_identity(id,provider,tenant_id,subject_id,member_id) VALUES ('http-identity','feishu','http-test-company','http-subject','http-member')");
         when(provider.id()).thenReturn("feishu");when(provider.displayName()).thenReturn("飞书");when(provider.enabled()).thenReturn(true);
         when(provider.authorizationUrl(anyString(),nullable(String.class))).thenAnswer(i->"https://identity.example.test/authorize?state="+i.getArgument(0));
@@ -140,6 +141,13 @@ class SsoHttpIntegrationTest {
                 .map(authorizations::findById).filter(a->a.getAccessToken()!=null && a.getAccessToken().isActive())
                 .map(a->a.getAccessToken().getToken().getTokenValue()).findFirst().orElseThrow();
     }
+    private HttpResponse<String> platformGrant(HttpClient browser,boolean granted,long version) throws Exception {
+        var csrf=body(get(browser,platformBase.resolve("/api/auth/csrf")));
+        return browser.send(HttpRequest.newBuilder(platformBase.resolve("/api/admin/applications/creator-platform/members/http-member"))
+                .header("Content-Type","application/json").header(csrf.get("headerName").asText(),csrf.get("token").asText())
+                .method("PATCH",HttpRequest.BodyPublishers.ofString("{\"granted\":"+granted+",\"version\":"+version+"}"))
+                .timeout(Duration.ofSeconds(10)).build(),HttpResponse.BodyHandlers.ofString());
+    }
     private boolean introspectsActive(String token) throws Exception {
         var basic=Base64.getEncoder().encodeToString(("creator-platform:"+SECRET).getBytes(StandardCharsets.UTF_8));
         var response=HttpClient.newHttpClient().send(HttpRequest.newBuilder(platformBase.resolve("/api/sso/introspect"))
@@ -160,6 +168,13 @@ class SsoHttpIntegrationTest {
         assertThat(introspectsActive(firstToken)).as("App logout revokes its issued platform token").isFalse();
         assertThat(get(browser,creatorBase.resolve("/creator-api/me")).statusCode()).isEqualTo(401);
         assertThat(get(browser,platformBase.resolve("/api/me")).statusCode()).as("App logout preserves the separate platform session").isEqualTo(200);
+        login(browser,false);
+        String beforeRevocation=activeToken();
+        assertThat(platformGrant(browser,false,1).statusCode()).isEqualTo(200);
+        assertThat(get(browser,creatorBase.resolve("/creator-api/me")).statusCode()).as("Revoking application access invalidates the real creator session on its next request").isEqualTo(401);
+        assertThat(get(browser,platformBase.resolve("/api/me")).statusCode()).as("Application revocation preserves the separate platform session").isEqualTo(200);
+        assertThat(platformGrant(browser,true,2).statusCode()).isEqualTo(200);
+        assertThat(introspectsActive(beforeRevocation)).as("Regranting does not revive an old token").isFalse();
         login(browser,false);
         jdbc.update("UPDATE platform_member SET session_version=session_version+1 WHERE id='http-member'");
         assertThat(get(browser,creatorBase.resolve("/creator-api/me")).statusCode()).as("Membership version change invalidates creator access on its next request").isEqualTo(401);

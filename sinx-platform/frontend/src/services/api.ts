@@ -1,18 +1,25 @@
 export type Provider = { id: 'feishu' | 'wecom'; name: string; enabled: boolean };
 export type Member = { id: string; displayName: string; role: 'ADMIN' | 'MEMBER' };
-export type Application = { id: string; name: string; description: string; url: string };
+export type Application = { id: string; name: string; description: string; url: string; icon?:string };
 export type Identity = {id:string;provider:'feishu'|'wecom';tenantId:string;subjectId:string;displayName:string;linkedAt:string};
 export type ManagedMember = Member & {enabled:boolean;createdAt:string;lastLoginAt:string|null;identities:Identity[]};
 export type MemberInput = {displayName:string;role:Member['role'];enabled:boolean};
 export type PendingIdentity = Omit<Identity,'linkedAt'> & {firstSeenAt:string;lastSeenAt:string};
 export type AuditEntry = {id:string;actorName:string;action:string;targetName:string;detail:string;createdAt:string};
 export type PageResult<T> = {items:T[];total:number;page:number;pageSize:number};
+export type ManagedApplication = {id:string;code:string;name:string;description:string;url:string;integrationType:'SSO'|'LINK';icon:string;sortOrder:number;enabled:boolean;connected:boolean;version:number;accessVersion:number;grantedMembers:number};
+export type ApplicationInput = Pick<ManagedApplication,'code'|'name'|'description'|'url'|'icon'|'sortOrder'|'enabled'> & {version?:number};
+export type ApplicationMember = {id:string;displayName:string;role:Member['role'];enabled:boolean;granted:boolean;version:number};
+export type ApplicationAudit = {id:string;actorName:string;action:string;applicationName:string;memberName:string|null;detail:string;createdAt:string};
 const businessErrors:Record<string,string>={
  forbidden:'暂无管理权限',invalid_request:'请检查输入内容',member_not_found:'成员不存在，请刷新列表',
  pending_not_found:'该账号已处理，请刷新列表',identity_not_found:'该关联已变更，请刷新列表',
  member_disabled:'成员已停用，请先启用后再关联',provider_already_linked:'该成员已有关联的同渠道账号，请先核对并解除原关联',
  identity_already_linked:'该账号已被关联，请刷新后核对',last_administrator:'请保留至少一位已启用且可登录的管理员',
  tenant_not_allowed:'该账号所属企业与当前配置不一致',
+ application_not_found:'应用不存在，请刷新列表',application_conflict:'应用或授权状态已变更，请刷新后重试',
+ application_code_exists:'应用标识已存在',application_code_immutable:'应用标识创建后不可修改',application_url_managed:'单点登录应用地址由接入配置管理',
+ invalid_application_url:'请输入HTTPS地址，本机开发可使用localhost或127.0.0.1的HTTP地址',
 };
 export class ApiError extends Error {
  constructor(public status: number,public code='') {
@@ -44,6 +51,12 @@ export const listPending=(page=1)=>request<PageResult<PendingIdentity>>('/admin/
 export const bindIdentity=(pendingId:string,memberId:string)=>mutate<void>('/admin/pending-identities/'+encodeURIComponent(pendingId)+'/bind','POST',{memberId});
 export const unlinkIdentity=(memberId:string,identityId:string)=>mutate<void>('/admin/members/'+encodeURIComponent(memberId)+'/identities/'+encodeURIComponent(identityId),'DELETE');
 export const listAudit=(page=1)=>request<PageResult<AuditEntry>>('/admin/audit?page='+page);
+export const listManagedApplications=()=>request<ManagedApplication[]>('/admin/applications');
+export const createApplication=(input:ApplicationInput)=>mutate<ManagedApplication>('/admin/applications','POST',input);
+export const updateApplication=(id:string,input:ApplicationInput)=>mutate<ManagedApplication>('/admin/applications/'+encodeURIComponent(id),'PATCH',input);
+export const listApplicationMembers=(id:string,q='',filter='all',page=1)=>request<PageResult<ApplicationMember>>('/admin/applications/'+encodeURIComponent(id)+'/members?'+new URLSearchParams({q,filter,page:String(page)}));
+export const setApplicationAccess=(id:string,memberId:string,granted:boolean,version:number)=>mutate<ApplicationMember>('/admin/applications/'+encodeURIComponent(id)+'/members/'+encodeURIComponent(memberId),'PATCH',{granted,version});
+export const listApplicationAudit=(page=1)=>request<PageResult<ApplicationAudit>>('/admin/applications/audit?page='+page);
 export async function logout() {
  const csrf = await request<{token:string;headerName:string}>('/auth/csrf');
  await request<void>('/auth/logout', { method: 'POST', headers: { [csrf.headerName]: csrf.token } });

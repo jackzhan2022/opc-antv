@@ -3,6 +3,10 @@ spring:
     name: creator-platform
   config:
     import: optional:file:./config/application-local.yml
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   datasource:
     url: ${CREATOR_DB_URL:jdbc:mysql://127.0.0.1:3307/creator_platform?useUnicode=true&characterEncoding=UTF-8&connectionTimeZone=UTC}
     username: ${CREATOR_DB_USERNAME:creator}
@@ -26,6 +30,16 @@ creator:
   public-base-url: ${CREATOR_PUBLIC_BASE_URL:http://localhost:8002}
   client-id: ${CREATOR_SSO_CLIENT_ID:creator-platform}
   client-secret: ${CREATOR_SSO_CLIENT_SECRET:}
+  ess:
+    enabled: ${CREATOR_ESS_ENABLED:false}
+    environment: ${CREATOR_ESS_ENVIRONMENT:test}
+    secret-id: ${CREATOR_ESS_SECRET_ID:}
+    secret-key: ${CREATOR_ESS_SECRET_KEY:}
+    operator-id: ${CREATOR_ESS_OPERATOR_ID:}
+    company-name: ${CREATOR_ESS_COMPANY_NAME:}
+    signer-id: ${CREATOR_ESS_SIGNER_ID:}
+    callback-token: ${CREATOR_ESS_CALLBACK_TOKEN:}
+    callback-key: ${CREATOR_ESS_CALLBACK_KEY:}
 logging:
   level:
     org.springframework.web.client: WARN

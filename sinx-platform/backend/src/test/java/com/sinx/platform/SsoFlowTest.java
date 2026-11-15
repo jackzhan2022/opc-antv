@@ -31,6 +31,7 @@ import static org.mockito.Mockito.*;
 class SsoFlowTest {
  @Autowired MockMvc mvc;
  @Autowired JdbcTemplate jdbc;
+ @Autowired com.sinx.platform.application.ApplicationService applications;
  @org.springframework.test.context.bean.override.mockito.MockitoSpyBean
  org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService authorizations;
  @MockitoBean(name="feishuIdentityProvider") IdentityProvider feishu;
@@ -42,6 +43,8 @@ class SsoFlowTest {
   jdbc.update("DELETE FROM external_identity");
   jdbc.update("DELETE FROM pending_identity");jdbc.update("DELETE FROM member_audit");jdbc.update("DELETE FROM platform_member");
   jdbc.update("INSERT INTO platform_member(id,display_name,platform_role) VALUES ('sso-member','平台成员','MEMBER')");
+  jdbc.update("UPDATE platform_application SET enabled=true,access_version=1 WHERE id='creator-platform'");
+  jdbc.update("INSERT INTO member_application_access(application_id,member_id,granted) VALUES ('creator-platform','sso-member',true)");
   jdbc.update("INSERT INTO external_identity(id,provider,tenant_id,subject_id,member_id) VALUES ('sso-identity','feishu','company','subject','sso-member')");
   when(feishu.id()).thenReturn("feishu");when(feishu.displayName()).thenReturn("飞书");when(feishu.enabled()).thenReturn(true);
   when(feishu.authorizationUrl(anyString(),nullable(String.class))).thenAnswer(i->"https://identity.example/authorize?state="+i.getArgument(0));
@@ -131,6 +134,62 @@ class SsoFlowTest {
   var authenticated=(MockHttpSession)callback.getRequest().getSession(false);
   mvc.perform(get(java.net.URI.create(target)).servletPath("/api/sso/authorize").session(authenticated))
    .andExpect(status().isFound()).andExpect(redirectedUrlPattern(CALLBACK+"?code=*&state=client-state"));
+ }
+ @Test void unassignedMemberCannotObtainCodeOrSeeApplication() throws Exception {
+  jdbc.update("DELETE FROM member_application_access WHERE member_id='sso-member'");
+  var session=new MockHttpSession();session.setAttribute("SINX_MEMBER_VERSION",0L);
+  var auth=user("sso-member").roles("MEMBER");
+  mvc.perform(get("/api/applications").session(session).with(auth)).andExpect(jsonPath("$.length()").value(0));
+  var result=mvc.perform(authorize().session(session).with(auth)).andExpect(status().isFound()).andReturn();
+  var query=UriComponentsBuilder.fromUriString(result.getResponse().getRedirectedUrl()).build().getQueryParams();
+  assertThat(query.getFirst("error")).isEqualTo("access_denied");assertThat(query.getFirst("code")).isNull();
+ }
+ @Test void revocationAndRegrantNeverRestoreOldTokensOrPendingCodes() throws Exception {
+  String token=token(),pending=code();
+  jdbc.update("UPDATE member_application_access SET granted=false,version=version+1 WHERE member_id='sso-member'");
+  mvc.perform(post("/api/sso/introspect").with(httpBasic("creator-platform",SECRET)).param("token",token)).andExpect(jsonPath("$.active").value(false));
+  jdbc.update("UPDATE member_application_access SET granted=true,version=version+1 WHERE member_id='sso-member'");
+  mvc.perform(post("/api/sso/introspect").with(httpBasic("creator-platform",SECRET)).param("token",token)).andExpect(jsonPath("$.active").value(false));
+  mvc.perform(post("/api/sso/token").with(httpBasic("creator-platform",SECRET)).param("grant_type","authorization_code")
+   .param("code",pending).param("redirect_uri",CALLBACK).param("code_verifier",VERIFIER)).andExpect(status().isBadRequest());
+  String fresh=token();
+  mvc.perform(get("/api/sso/userinfo").header("Authorization","Bearer "+fresh)).andExpect(status().isOk());
+ }
+ @Test void disablingAndReenablingApplicationDoesNotReviveSessions() throws Exception {
+  String old=token();
+  jdbc.update("UPDATE platform_application SET enabled=false,access_version=access_version+1 WHERE id='creator-platform'");
+  mvc.perform(get("/api/sso/userinfo").header("Authorization","Bearer "+old)).andExpect(status().isUnauthorized());
+  jdbc.update("UPDATE platform_application SET enabled=true,access_version=access_version+1 WHERE id='creator-platform'");
+  mvc.perform(get("/api/sso/userinfo").header("Authorization","Bearer "+old)).andExpect(status().isUnauthorized());
+  mvc.perform(get("/api/sso/userinfo").header("Authorization","Bearer "+token())).andExpect(status().isOk());
+ }
+ @Test void displayMetadataChangesDoNotInvalidateBusinessToken() throws Exception {
+  String token=token();
+  jdbc.update("UPDATE platform_application SET version=version+1 WHERE id='creator-platform'");
+  mvc.perform(get("/api/sso/userinfo").header("Authorization","Bearer "+token)).andExpect(status().isOk());
+ }
+ @Test void revokeWaitsForCodeExchangeAndResultingTokenIsInactive() throws Exception {
+  jdbc.update("INSERT INTO platform_member(id,display_name,platform_role) VALUES ('lock-admin','授权管理员','ADMIN')");
+  String pending=code();
+  var reading=new java.util.concurrent.CountDownLatch(1);var release=new java.util.concurrent.CountDownLatch(1);
+  doAnswer(invocation->{
+   Object result=invocation.callRealMethod();
+   if(pending.equals(invocation.getArgument(0))) {reading.countDown();release.await(5,java.util.concurrent.TimeUnit.SECONDS);}
+   return result;
+  }).when(authorizations).findByToken(eq(pending),any());
+  var executor=java.util.concurrent.Executors.newFixedThreadPool(2);
+  try {
+   var exchange=executor.submit(()->mvc.perform(post("/api/sso/token").with(httpBasic("creator-platform",SECRET)).param("grant_type","authorization_code")
+    .param("code",pending).param("redirect_uri",CALLBACK).param("code_verifier",VERIFIER)).andReturn());
+   assertThat(reading.await(5,java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+   var revocation=executor.submit(()->applications.setAccess(new com.sinx.platform.member.MemberAdminModels.Actor("lock-admin",0),"creator-platform","sso-member",new com.sinx.platform.application.ApplicationModels.GrantInput(false,1L)));
+   assertThatThrownBy(()->revocation.get(150,java.util.concurrent.TimeUnit.MILLISECONDS)).isInstanceOf(java.util.concurrent.TimeoutException.class);
+   release.countDown();
+   var result=exchange.get(10,java.util.concurrent.TimeUnit.SECONDS);assertThat(result.getResponse().getStatus()).isEqualTo(200);
+   revocation.get(10,java.util.concurrent.TimeUnit.SECONDS);
+   String issued=JsonPath.read(result.getResponse().getContentAsString(),"$.access_token");
+   mvc.perform(post("/api/sso/introspect").with(httpBasic("creator-platform",SECRET)).param("token",issued)).andExpect(jsonPath("$.active").value(false));
+  } finally {release.countDown();executor.shutdownNow();}
  }
  @org.junit.jupiter.params.ParameterizedTest
  @org.junit.jupiter.params.provider.ValueSource(strings={"/api/sso/token","/api/sso/%74oken"})

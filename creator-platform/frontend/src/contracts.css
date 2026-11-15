@@ -1,0 +1,25 @@
+.contract-panel { padding: 20px; }
+.contract-notice { margin-bottom: 20px; }
+.contract-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 20px; }
+.contract-toolbar h2 { margin: 0 0 8px; font-size: 18px; }
+.contract-toolbar p { margin: 0; }
+.contract-title.ant-btn { padding: 0; height: auto; text-align: left; white-space: normal; font-weight: 600; }
+.contract-status-note { margin-top: 4px; color: #8a4b08; font-size: 12px; }
+.contract-help { margin: 24px 0; color: #475569; line-height: 1.8; }
+.contract-file { margin-bottom: 24px; }
+.contract-file label { display: block; margin-bottom: 8px; }
+.contract-file input { max-width: 100%; padding: 8px 0; }
+.contract-iframe { width: 100%; height: min(72vh, 780px); min-height: 360px; border: 1px solid #dce3ed; border-radius: 6px; background: #fff; }
+.contract-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.contract-fields { border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 12px; }
+.contract-fields h3 { font-size: 16px; }
+.contract-field-value { white-space: pre-wrap; overflow-wrap: anywhere; }
+.contract-audit { padding: 0; list-style: none; }
+.contract-audit li { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 12px 0; border-bottom: 1px solid #e2e8f0; }
+.contract-audit span { color: #64748b; }
+@media (max-width: 600px) {
+  .contract-toolbar { align-items: flex-start; flex-direction: column; }
+  .contract-form-grid { grid-template-columns: 1fr; gap: 0; }
+  .contract-panel { padding: 12px; }
+  .contract-toolbar .ant-btn { min-height: 44px; }
+}

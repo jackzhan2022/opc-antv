@@ -14,7 +14,7 @@ function NavIcon({ kind }: { kind: string }) {
 export default function Layout() {
   const location = useLocation(), isState = location.pathname === "/auth-error";
   const [member, setMember] = useState<Member | null>(null), [error, setError] = useState<unknown>(), [retry, setRetry] = useState(0), [busy, setBusy] = useState(false), [navigationOpen, setNavigationOpen] = useState(false);
-  const titles: Record<string, string> = { "/": "创作者资源库", "/occupations": "职业分类", "/tags": "技能标签", "/roles": "角色权限", "/new": "新增创作者", "/auth-error": "访问状态" };
+  const titles: Record<string, string> = { "/": "创作者资源库", "/occupations": "职业分类", "/tags": "技能标签", "/roles": "角色权限", "/new": "新增创作者", "/auth-error": "访问状态", "/contracts": "合同管理", "/contract-templates": "合同模板" };
   const title = titles[location.pathname] || (location.pathname.endsWith("/edit") ? "编辑档案" : "创作者详情");
   useEffect(() => { setNavigationOpen(false); }, [location.pathname]);
   useEffect(() => {
@@ -31,12 +31,12 @@ export default function Layout() {
   }
   const isAdmin = member?.role === "ADMIN";
   function item(path: string, label: string, icon: string) {
-    const active = path === "/" ? !["/occupations", "/tags", "/roles", "/auth-error"].includes(location.pathname) : location.pathname === path;
+    const active = path === "/" ? !["/occupations", "/tags", "/roles", "/auth-error", "/contracts", "/contract-templates"].includes(location.pathname) : location.pathname === path;
     return <Link to={path} className={`nav-item${active ? " active" : ""}`} aria-current={active ? "page" : undefined} onClick={() => setNavigationOpen(false)}><NavIcon kind={icon}/><span>{label}</span></Link>;
   }
   const navigation = <>
     <Link className="brand" to="/" aria-label="创作者平台首页"><span className="brand-symbol"><NavIcon kind="people"/></span><span>创作者管理<small>CREATOR HUB</small></span></Link>
-    <nav aria-label="业务导航"><div className="nav-group"><p className="nav-label">资源管理</p>{item("/", "创作者资源库", "people")}</div>{isAdmin && <><div className="nav-group"><p className="nav-label">基础配置</p>{item("/occupations", "职业分类", "work")}{item("/tags", "技能标签", "tag")}</div><div className="nav-group"><p className="nav-label">系统设置</p>{item("/roles", "角色权限", "shield")}</div></>}</nav>
+    <nav aria-label="业务导航"><div className="nav-group"><p className="nav-label">资源管理</p>{item("/", "创作者资源库", "people")}{item("/contracts", "合同管理", "work")}{item("/contract-templates", "合同模板", "work")}</div>{isAdmin && <><div className="nav-group"><p className="nav-label">基础配置</p>{item("/occupations", "职业分类", "work")}{item("/tags", "技能标签", "tag")}</div><div className="nav-group"><p className="nav-label">系统设置</p>{item("/roles", "角色权限", "shield")}</div></>}</nav>
     <div className="sidebar-foot"><a href={PLATFORM_URL}>← <span>返回信计 X 平台</span></a></div>
   </>;
   return <ConfigProvider button={{ autoInsertSpace: false }} locale={zhCN} theme={{ token: { colorPrimary: "#2563eb", borderRadius: 6, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif', colorText: "#263f61", colorTextSecondary: "#60718a", colorBorder: "#dce4ef", controlHeight: 36, fontSize: 13 }, components: { Table: { headerBg: "#f8fafc", cellPaddingBlock: 16, fontSize: 12 }, Button: { fontWeight: 500 } } }}>

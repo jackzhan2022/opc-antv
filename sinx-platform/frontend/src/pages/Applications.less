@@ -1,0 +1,20 @@
+.applications-main {
+  .management-toolbar { flex-wrap: wrap; }
+  .application-identity strong { display: block; font-weight: 550; }
+  .application-identity small { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+  .application-grant-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; margin-bottom: 20px; }
+  .application-picker { display: grid; gap: 8px; font-size: 13px; width: 280px; max-width: 100%; }
+  .application-picker .ant-select { width: 100%; }
+  .application-grant-toolbar .ant-input-search { width: 260px; max-width: 100%; }
+  .application-grant-toolbar > .ant-select { width: 140px; }
+}
+.application-help { color: var(--muted); font-size: 13px; line-height: 1.8; margin: 12px 0 20px; }
+.application-form-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 0 20px; }
+.application-form-grid .ant-input-number { width: 100%; }
+@media (max-width:680px) {
+  .applications-main .management-toolbar { align-items: stretch; }
+  .applications-main .management-toolbar > p { width: 100%; }
+  .applications-main .application-picker,
+  .applications-main .application-grant-toolbar .ant-input-search { width: 100%; }
+  .application-form-grid { grid-template-columns: minmax(0,1fr); }
+}

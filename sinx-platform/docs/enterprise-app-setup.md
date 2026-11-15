@@ -42,9 +42,9 @@
 | `FEISHU_APP_ID` | 凭证与基础信息中的 App ID |
 | `FEISHU_APP_SECRET` | 同一应用的 App Secret |
 | `FEISHU_TENANT_KEY` | 本企业用户信息响应 `data.tenant_key`；不是 App ID |
-| `FEISHU_ADMIN_SUBJECTS`（可选） | 本应用下指定管理员的 `open_id`，多个以逗号分隔 |
+| `FEISHU_ENABLED` | 参数与应用发布完成后设置为 `true` |
 
-管理员需在首次登记前配置。现有成员不会因为后续修改环境变量而自动更改角色。
+`FEISHU_ADMIN_SUBJECTS` 不再用于登录或提权。当前平台已有企微管理员：飞书首次授权成功后，未关联身份进入「成员管理 → 待关联账号」并拒绝登录。使用既有企微管理员核对该飞书身份，将其关联到同一平台成员，再重新从飞书登录。不根据姓名、邮箱自动合并，不重新执行初始管理员配置。
 
 ## 3. 企业微信自建应用
 
@@ -74,7 +74,7 @@
 | `WECOM_CORP_ID` | 本公司的企业 ID（CorpID） |
 | `WECOM_AGENT_ID` | 本自建应用的 AgentId |
 | `WECOM_APP_SECRET` | 本自建应用的 Secret |
-| `WECOM_ADMIN_SUBJECTS`（可选） | 指定管理员的内部成员 userid，多个以逗号分隔 |
+| 成员准入 | 企业身份须经管理员关联至启用的平台成员；旧 `WECOM_ADMIN_SUBJECTS` 不用于提权 |
 
 ## 4. 对应当前后端的配置
 
@@ -89,14 +89,12 @@ sinx:
       client-id: '填写飞书 App ID'
       client-secret: '填写飞书 App Secret'
       tenant-id: '填写本企业 tenant_key'
-      admin-subjects: [] # 如 ['ou_xxx']，首次登记前设置
     wecom:
       enabled: false # 可以单独启用一个渠道
       client-id: '填写企业 CorpID'
       tenant-id: '填写相同的企业 CorpID'
       client-secret: '填写本自建应用 Secret'
       agent-id: '填写 AgentId'
-      admin-subjects: [] # 如 ['zhangsan']，必须是内部 userid
 ```
 
 正式部署时启用 `prod` profile。如果选择纯环境变量部署，则不携带本地 `application-local.yml`，设置 `SPRING_PROFILES_ACTIVE=prod`、`SINX_PUBLIC_BASE_URL=https://x.aixmax.cn`，并按上表填写各渠道变量及 `FEISHU_ENABLED=true` / `WECOM_ENABLED=true`。本地文件与简写环境变量的覆盖关系见 README，勿混用造成配置被覆盖。
@@ -112,7 +110,7 @@ sinx:
 3. 确认登录页与 `/api/health` 可用，启用已配齐参数的身份渠道，重启后端。
 4. 从平台登录页开始授权，不直接访问 callback：回调需要同一浏览器会话中的一次性 state。验证登录、刷新、退出及应用范围外账号被拒绝。
 
-飞书应用尚未创建，可以独立准备应用参数，不影响先联调企微渠道。
+飞书企业自建应用已创建并发布 `0.1.0`，网页入口与正式回调已保存，服务器飞书和企微渠道均启用；当前仅本人可用，真实平台授权与成员关联正在验收。最新状态见 [飞书配置现状](feishu-configuration-status.md)。
 
 ## 官方与项目资料
 
